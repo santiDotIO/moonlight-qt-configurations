@@ -4,7 +4,7 @@
 HUB_PORT="1-1"
 TARGET_PORT="2"
 
-echo "Power-cycling 8BitDo dongle on port $HUB_PORT:$TARGET_PORT..."
+echo "🕒 Power-cycling 8BitDo dongle on port $HUB_PORT:$TARGET_PORT..."
 
 uhubctl -l "$HUB_PORT" -p "$TARGET_PORT" -a 0
 sleep 2
