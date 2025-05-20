@@ -1,0 +1,10 @@
+[Unit]
+Description=Power cycle 8BitDo dongle to force enumeration
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/power-cycle-8bitdo.sh
+
+[Install]
+WantedBy=multi-user.target

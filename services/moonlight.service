@@ -1,0 +1,17 @@
+[Unit]
+Description=Moonlight Qt (User Service)
+After=graphical.target sound.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/moonlight-launch.sh
+Restart=always
+
+Environment=QT_QPA_PLATFORM=eglfs
+Environment=QT_QPA_EGLFS_PHYSICAL_WIDTH=1920
+Environment=QT_QPA_EGLFS_PHYSICAL_HEIGHT=1080
+Environment=QTMULTIMEDIA_PREFERRED_PLUGINS=alsa
+Environment=QT_AUTO_SCREEN_SCALE_FACTOR=1
+
+[Install]
+WantedBy=default.target
