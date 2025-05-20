@@ -81,6 +81,7 @@ sudo nano /etc/systemd/system/power-cycle-8bitdo.service
 
 # enable service
 
+```
 sudo systemctl daemon-reexec
 sudo systemctl enable --now power-cycle-8bitdo.service
 ```
