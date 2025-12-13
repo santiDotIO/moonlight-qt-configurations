@@ -8,6 +8,22 @@ Replace [REPLACE_USER] with whatver user was created
 
 ## the basic stuff
 
+add repo, depending on platform
+
+[Raspi]([url](https://github.com/moonlight-stream/moonlight-docs/wiki/Installing-Moonlight-Qt-on-Raspberry-Pi-4))
+
+```
+curl -1sLf 'https://dl.cloudsmith.io/public/moonlight-game-streaming/moonlight-qt/setup.deb.sh' | distro=raspbian codename=$(lsb_release -cs) sudo -E bash
+sudo apt install moonlight-qt
+```
+
+[Ubuntu]([url](https://github.com/moonlight-stream/moonlight-docs/wiki/Installing-Moonlight-Qt-on-Raspberry-Pi-4))
+
+```
+curl -1sLf 'https://dl.cloudsmith.io/public/moonlight-game-streaming/moonlight-l4t/setup.deb.sh' | sudo -E bash
+sudo apt install moonlight-qt
+```
+
 ```
 sudo apt update
 sudo apt upgrade -y
