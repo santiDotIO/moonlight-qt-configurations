@@ -21,7 +21,7 @@ curl -1sLf 'https://dl.cloudsmith.io/public/moonlight-game-streaming/moonlight-q
 sudo apt install -y uhubctl pulseaudio moonlight-qt
 ```
 
-### [Ubuntu](https://github.com/moonlight-stream/moonlight-docs/wiki/Installing-Moonlight-Qt-on-Raspberry-Pi-4)
+### [Ubuntu](https://snapcraft.io/install/moonlight/ubuntu)
 
 ```
 sudo apt update
