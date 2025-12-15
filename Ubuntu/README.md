@@ -56,8 +56,7 @@ the devince number in this case is `13`
 
 Now we cna run `lsusb -t` to check which port is device 13 connected to
 
-```
-> lsusb -t
+```> lsusb -t
 
 Bus 01.Port 1: Dev 1, Class=root_hub, Driver=dwc_otg/1p, 480M
     |__ Port 1: Dev 2, If 0, Class=Hub, Driver=hub/5p, 480M
