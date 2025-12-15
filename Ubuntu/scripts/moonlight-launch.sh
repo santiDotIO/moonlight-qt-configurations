@@ -80,4 +80,4 @@ env > /tmp/moonlight-env.log
 sleep 3
 
 echo "Launching Moonlight Qt..."
-exec moonlight-qt
+exec /snap/bin/moonlight
