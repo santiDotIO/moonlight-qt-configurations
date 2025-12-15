@@ -59,7 +59,7 @@ Now we cna run `lsusb -t` to check which port is device 13 connected to
 ```
 > lsusb -t
 
-/:  Bus 01.Port 1: Dev 1, Class=root_hub, Driver=dwc_otg/1p, 480M
+Bus 01.Port 1: Dev 1, Class=root_hub, Driver=dwc_otg/1p, 480M
     |__ Port 1: Dev 2, If 0, Class=Hub, Driver=hub/5p, 480M
         |__ Port 1: Dev 3, If 0, Class=Vendor Specific Class, Driver=smsc95xx, 480M
         |__ Port 2: Dev 13, If 0, Class=Vendor Specific Class, Driver=xpad, 12M
