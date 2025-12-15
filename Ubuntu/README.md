@@ -14,7 +14,7 @@ https://snapcraft.io/install/moonlight/ubuntu
 sudo apt update
 sudo apt upgrade -y
 
-sudo apt install snapd
+sudo apt install uhubctl pulseaudio alsa-utils snapd
 sudo snap install moonlight
 ```
 
