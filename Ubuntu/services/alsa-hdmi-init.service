@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize HDMI audio (ALSA IEC958 enable + persist)
+After=alsa-restore.service sound.target
+Wants=alsa-restore.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/alsa-hdmi-init.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

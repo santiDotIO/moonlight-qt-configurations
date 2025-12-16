@@ -1,0 +1,36 @@
+[Unit]
+Description=Moonlight Kiosk (Cage + AppImage) on tty1
+After=systemd-user-sessions.service sound.target alsa-hdmi-init.service
+Wants=systemd-user-sessions.service sound.target alsa-hdmi-init.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+User=santidotio
+Group=santidotio
+
+# Creates a real logind session at boot (removes the "needs SSH" dependency)
+PAMName=login
+
+# Ensure runtime dir exists even at boot when no user session has created it yet
+PermissionsStartOnly=yes
+ExecStartPre=/usr/bin/install -d -m 700 -o santidotio -g santidotio /run/user/1000
+
+Environment=HOME=/home/santidotio
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=LIBSEAT_BACKEND=logind
+
+# Attach to tty1
+TTYPath=/dev/tty1
+StandardInput=tty
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+ExecStart=/usr/bin/cage -s -- /usr/local/bin/moonlight-launch.sh
+
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,97 +1,229 @@
-# moonlight configurations
+# Moonlight Kiosk on Ubuntu (headless/TTY) with persistent HDMI audio
 
-Overview
-OS - Ubuntu 25.10
-Hardware - HP microserver
+This repo folder contains the exact scripts and systemd services used to make:
+- Moonlight start on **tty1** at boot (kiosk mode, no desktop GUI)
+- Display reliably without needing an SSH session
+- Audio reliably route to **HDMI (TV)** and **stay unmuted after reboot**
 
-Replace [REPLACE_USER] with whatever user was created
+It assumes you're launching Moonlight via an **AppImage** extracted to `squashfs-root/AppRun`
+and running it inside **Cage**.
 
-## the basic stuff
+## What you get
 
-https://snapcraft.io/install/moonlight/ubuntu
+Files included:
 
-```
+- `etc/asound.conf`  
+  Sets **ALSA default** output to the HDMI device.
+- `usr/local/bin/alsa-hdmi-init.sh`  
+  Forces IEC958 (HDMI/SPDIF digital switches) **ON** and persists via `alsactl store`.
+- `etc/systemd/system/alsa-hdmi-init.service`  
+  Runs the init script at boot (oneshot).
+- `usr/local/bin/moonlight-launch.sh`  
+  Sets runtime env + forces SDL audio to ALSA and launches Moonlight AppRun.
+- `etc/systemd/system/moonlight-kiosk.service`  
+  Runs Cage on tty1 and launches `moonlight-launch.sh` as your user.
+
+## Assumptions
+
+This guide matches your current machine:
+
+- User: `santidotio`
+- UID: `1000`
+- Moonlight AppRun path:
+  `/home/santidotio/apps/moonlight/squashfs-root/AppRun`
+- Audio device:
+  `card PCH`, `device 3` (HDMI 0, LG TV)
+
+If any of those differ on a future setup, see **Customization**.
+
+## 1) Install prerequisites
+
+```bash
 sudo apt update
-sudo apt upgrade -y
-
-sudo apt install uhubctl pulseaudio alsa-utils snapd
-sudo snap install moonlight
+sudo apt install -y cage xwayland alsa-utils
 ```
 
+Notes:
+- `cage` is the Wayland kiosk compositor.
+- `xwayland` is needed because Moonlight (in your case) is running with `QT_QPA_PLATFORM=xcb`.
 
-## create service file under user
+## 2) Put Moonlight AppImage in place
 
-```
-nano ~/.config/systemd/user/moonlight.service
+Example layout used here:
 
-# create moonlight init script
-nano /usr/local/bin/moonlight-launch.sh
-chmod + /usr/local/bin/moonlight-launch.sh
-
-ln': ln -s /usr/local/bin/moonlight-launch.sh ~/moonlight-launch.sh
-
-# Enable moonlight service
-systemctl --user daemon-reexec
-systemctl --user enable --now moonlight.service
+```bash
+mkdir -p /home/santidotio/apps/moonlight
+cd /home/santidotio/apps/moonlight
+# Put Moonlight.AppImage here
 ```
 
-## moonlight config file
+If AppImage execution fails due to FUSE, extract it:
 
-```
-ln -s ~/.config/Moonlight\ Game\ Streaming\ Project/Moonlight.conf ~/Moonlight.conf
-```
-
-## Create service to auto connecy dongle
-
-Some dongles might not auto connect, after the Raspi has booted, connect the dongle and check which port it's running on
-
-```
-> lsusb
-
-...
-Bus 001 Device 013: ID 2dc8:3106 8BitDo 8BitDo Receiver
-...
-
-the devince number in this case is `13`
-
-Now we cna run `lsusb -t` to check which port is device 13 connected to
-
-```> lsusb -t
-
-Bus 01.Port 1: Dev 1, Class=root_hub, Driver=dwc_otg/1p, 480M
-    |__ Port 1: Dev 2, If 0, Class=Hub, Driver=hub/5p, 480M
-        |__ Port 1: Dev 3, If 0, Class=Vendor Specific Class, Driver=smsc95xx, 480M
-        |__ Port 2: Dev 13, If 0, Class=Vendor Specific Class, Driver=xpad, 12M
-        |__ Port 3: Dev 10, If 0, Class=Human Interface Device, Driver=usbhid, 12M
-        |__ Port 3: Dev 10, If 1, Class=Human Interface Device, Driver=usbhid, 12M
-        |__ Port 3: Dev 10, If 2, Class=Human Interface Device, Driver=usbhid, 12M
+```bash
+chmod +x Moonlight.AppImage
+./Moonlight.AppImage --appimage-extract
 ```
 
-We see Buss 1 port 2 is device 13. Using `uhubctl` we will power cycle that port so the Raspbery Pi can detect it
+That creates:
 
+- `/home/santidotio/apps/moonlight/squashfs-root/AppRun`
 
+Confirm:
 
-```
-sudo nano /usr/local/bin/power-cycle-8bitdo.sh
-
-# for easy acess link it to the home dir
-sudo ln /usr/local/bin/power-cycle-8bitdo.sh ~/power-cycle-8bitdo.sh
-
-sudo chmod +x /usr/local/bin/power-cycle-8bitdo.sh
-
-# create the service file
-sudo nano /etc/systemd/system/power-cycle-8bitdo.service
-
-# enable service
-
-```
-sudo systemctl daemon-reexec
-sudo systemctl enable --now power-cycle-8bitdo.service
+```bash
+test -x /home/santidotio/apps/moonlight/squashfs-root/AppRun && echo OK
 ```
 
+## 3) Install the config + scripts from this folder
 
-## last reboot 
+From the folder containing `etc/` and `usr/`:
 
+```bash
+# Copy /etc files
+sudo cp -v etc/asound.conf /etc/asound.conf
+sudo cp -v etc/systemd/system/alsa-hdmi-init.service /etc/systemd/system/alsa-hdmi-init.service
+sudo cp -v etc/systemd/system/moonlight-kiosk.service /etc/systemd/system/moonlight-kiosk.service
+
+# Copy scripts
+sudo cp -v usr/local/bin/alsa-hdmi-init.sh /usr/local/bin/alsa-hdmi-init.sh
+sudo cp -v usr/local/bin/moonlight-launch.sh /usr/local/bin/moonlight-launch.sh
+
+# Permissions
+sudo chmod 755 /usr/local/bin/alsa-hdmi-init.sh /usr/local/bin/moonlight-launch.sh
 ```
+
+## 4) Enable and start services
+
+```bash
+sudo systemctl daemon-reload
+
+# Audio init (persists IEC958 "on")
+sudo systemctl enable --now alsa-hdmi-init.service
+
+# Kiosk mode (Cage on tty1 + Moonlight)
+sudo systemctl enable --now moonlight-kiosk.service
+```
+
+## 5) Reboot test (the real test)
+
+```bash
 sudo reboot
 ```
+
+After reboot you should see Moonlight on the TV **without SSH**.
+
+## Verification commands
+
+### Confirm HDMI is the ALSA default
+
+```bash
+aplay -L | head -n 30
+aplay -D default /usr/share/sounds/alsa/Front_Center.wav
+```
+
+### Confirm IEC958 is on
+
+```bash
+amixer -c PCH sget 'IEC958',0
+```
+
+You want: `Playback [on]`
+
+### Check service logs
+
+```bash
+sudo journalctl -u alsa-hdmi-init.service -b --no-pager
+sudo journalctl -u moonlight-kiosk.service -b --no-pager | tail -n 120
+```
+
+## Customization
+
+### A) Different user / UID
+
+In `etc/systemd/system/moonlight-kiosk.service`, change:
+
+- `User=...`
+- `Group=...`
+- `ExecStartPre=... /run/user/1000`
+- `Environment=HOME=...`
+- `Environment=XDG_RUNTIME_DIR=...`
+
+And in `usr/local/bin/moonlight-launch.sh`, update defaults:
+
+- `MOONLIGHT_APP_RUN=...`
+- `HOME` and `XDG_RUNTIME_DIR` fallback values
+
+If you want to make this reusable across users, systemd supports specifiers like:
+- `%u` (username)
+- `%U` (UID)
+
+You can replace `/run/user/1000` with `/run/user/%U` and set `User=YOURUSER`.
+
+### B) Different HDMI device
+
+Find your HDMI device:
+
+```bash
+aplay -l
+```
+
+Example output line:
+
+- `card 0: PCH ... device 3: HDMI 0 [LG TV ...]`
+
+Then edit `/etc/asound.conf`:
+
+- Change `hw:PCH,3` to match your card/device.
+
+Apply immediately by restarting apps (no daemon restart needed), but reboot is the real validation.
+
+### C) Change resolution / Qt platform
+
+In `usr/local/bin/moonlight-launch.sh`:
+
+- `QT_QPA_PLATFORM=xcb` (current)
+- You can experiment with `wayland` or `eglfs`, but with Cage you're typically fine with Wayland-backed flows.
+
+## Troubleshooting
+
+### Moonlight starts but no audio after reboot
+
+1) Confirm `/etc/asound.conf` points to HDMI
+2) Confirm IEC958 is on:
+   ```bash
+   amixer -c PCH sget 'IEC958',0
+   ```
+3) Force persist again:
+   ```bash
+   sudo /usr/local/bin/alsa-hdmi-init.sh
+   sudo alsactl store PCH
+   ```
+4) Reboot and verify again.
+
+### Moonlight doesn't show until you SSH
+
+This is typically because the process doesn't have a real logind session or runtime dir at boot.
+This setup fixes that via:
+- `PAMName=login`
+- creating `/run/user/1000` via `ExecStartPre`
+
+Confirm the unit still contains those lines.
+
+## Uninstall / disable
+
+```bash
+sudo systemctl disable --now moonlight-kiosk.service
+sudo systemctl disable --now alsa-hdmi-init.service
+
+sudo rm -f /etc/systemd/system/moonlight-kiosk.service
+sudo rm -f /etc/systemd/system/alsa-hdmi-init.service
+sudo rm -f /usr/local/bin/moonlight-launch.sh
+sudo rm -f /usr/local/bin/alsa-hdmi-init.sh
+sudo rm -f /etc/asound.conf
+
+sudo systemctl daemon-reload
+```
+
+---
+If you want, I can also generate a “parameterized” version of the service that uses `%u/%U`
+so you can drop it onto any box with minimal edits.
